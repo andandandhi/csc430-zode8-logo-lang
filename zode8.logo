@@ -1,0 +1,8 @@
+to interp :exprc :env
+  show case :exprc
+  [[(first :exprc) = 'numc] (list :exprc)]
+end
+
+to main
+  make 'env ( list ( list 'true true ) ( list 'false false ) )
+end
