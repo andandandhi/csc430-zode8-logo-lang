@@ -1,0 +1,30 @@
+TO numC :n
+  output (list "numC :n)
+END
+
+TO IdC :s
+  output (list "IdC :s)
+END
+
+TO strC :str
+  output (list "strC :str)
+END
+
+TO AppC :first :args
+  output (list "AppC :first :args)
+END
+
+TO ifC :test :then :else
+  output (list "ifC :test :then :else)
+END
+
+TO lamC :args :body
+  output (list "lamC :args :body)
+END
+
+print (numC 42)
+print (IdC 'gname)
+print (strC "namestr)
+print (AppC (list (numC 42) (numC 43)) (IdC 'h))
+print (ifC true (numC 52) (numC 99))
+print (lamC (list 'g 'q 't) (numC 55))
