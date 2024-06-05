@@ -1,0 +1,23 @@
+to interp :exprc :env 
+case ( item 1 :exprc ) [ 
+    [ ['numc] output list ''numv item 2 :exprc ]
+    [ else output 'unimplemented ] ]
+end
+
+TO serialize :value
+  case ( item 1 :value ) [
+    [ ['numv] show word word '" item 2 :value '"]
+    [ ['boolv] show word word '" item 2 :value '"]
+    [ ['primv] show '"#<primop>"]
+    [ ['closv] show '"#<procedure>"]
+    [ ELSE show '"other_value?"]
+  ]
+END
+
+to main
+  make 'env ( list ( list 'true true ) ( list 'false false ) )
+  make 'test_expr ['numc 4]
+  serialize (interp :test_expr :env)
+end
+
+main
