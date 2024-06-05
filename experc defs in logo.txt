@@ -1,30 +1,74 @@
 TO numC :n
   output (list "numC :n)
 END
-
-TO IdC :s
+  TO IdC :s
   output (list "IdC :s)
 END
-
-TO strC :str
+  TO strC :str
   output (list "strC :str)
 END
-
-TO AppC :first :args
+  TO AppC :first :args
   output (list "AppC :first :args)
 END
-
-TO ifC :test :then :else
+  TO ifC :test :then :else
   output (list "ifC :test :then :else)
 END
-
-TO lamC :args :body
+  TO lamC :args :body
   output (list "lamC :args :body)
 END
+  to numV :n
+  output (list "numV :n)
+end
+  to strV :str
+  output (list "strV :str)
+end
+  to boolV :bool
+  output (list "boolV :bool)
+end
+  to closV :args :body :env
+  output (list "closV :args :body :env)
+end
+  to primopV :op
+  output (list "primopV :op)
+end
 
-print (numC 42)
-print (IdC 'gname)
-print (strC "namestr)
-print (AppC (list (numC 42) (numC 43)) (IdC 'h))
-print (ifC true (numC 52) (numC 99))
-print (lamC (list 'g 'q 't) (numC 55))
+
+to eval :op :args
+  make "first (first :args)
+  make "second (first butfirst :args)
+  cond[
+    [[:op = "+] cond[
+        [[and (number? :first) (number? :second)]
+          output :first + :second]
+        [else output "error+]
+      ]]
+    [[:op = "-] cond[
+        [[and (number? :first) (number? :second)]
+          output :first - :second]
+        [else output "error-]
+      ]]
+    [[:op = "*] cond[
+        [[and (number? :first) (number? :second)]
+          output :first * :second]
+        [else output "error*]
+      ]]
+    [[:op = "/] cond[
+        [[and (number? :first) (number? :second)]
+          output :first / :second]
+        [else output "error/]
+      ]]
+    [else output "error]
+  ]
+end
+
+print "
+print "=============================
+print (eval "+ (list 4 6))
+print (eval "+ (list 5 "errror))
+print (eval "- (list 7 9))
+print (eval "- (list 7 "error))
+print (eval "* (list 5 6))
+print (eval "* (list 6 "error))
+print (eval "/ (list 20 5))
+print (eval "/ (list 20 "error))
+print (eval "h (list 20 20))
