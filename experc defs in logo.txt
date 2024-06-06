@@ -51,12 +51,13 @@ end
           output :first * :second]
         [else output "error*]
       ]]
-    [[:op = "/] cond[
+    [[equal? :op "/] cond[
         [[and (number? :first) (number? :second)]
           output :first / :second]
         [else output "error/]
       ]]
-    [[:op = "<=] cond[
+    [[equal? :op '<=] 
+      cond[
         make 'n1 (interp :first :env)
         make 'n2 (interp :second :env)
         cond[
@@ -64,8 +65,19 @@ end
             output (list 'boolV ((item 2 :n1) <= (item 2 :n2)))]
           [else output "ZODE:_one_arg_not_num]
         ]]]
-          [else output "error]
-  ]
+    [[equal? :op "equal?] cond[
+        make 'n1 (interp :first :env)
+        make 'n2 (interp :second :env)
+        cond[
+          ;booleans are repressented by numbers so should be covered by this
+          [[and (number? (item 2 :n1) (number? (item 2 :n2)))]
+          	output (list 'boolV (equal? (item 2 :n1) (item 2 :n2)))]
+          ; string case
+          [[and (word? (item 2 :n1) (word? (item 2 :n2)))]
+          	output (list 'boolV (equal? (item 2 :n1) (item 2 :n2)))]
+          
+          [else output "ZODE:_mismatched_args :op]]]]
+    [else output "ZODE:_error :op]]
 end
   to interpBinop :binop :val1 :val2
   case :binop [
@@ -86,7 +98,8 @@ end
  case item 1 :exprc [
      [ ['numc] output ( list ''numv item 2 :exprc ) ]
     ;these appc cases totally aren't efficient
-    [ ['appc] case ( item 2 :exprc ) [
+    [ ['appc] 
+      case ( item 2 :exprc ) [
         [[['idc '+]] output ( list ''numv
            ( interpBinop '+ ( interp item 1 item 3 :exprc :env ) ( interp item 2 item 3 :exprc :env ) ) )]
         [[['idc '-]] output ( list ''numv
@@ -95,9 +108,19 @@ end
            ( interpBinop '* ( interp item 1 item 3 :exprc :env ) ( interp item 2 item 3 :exprc :env ) ) )]
 		[[['idc '/]] output ( list ''numv
            ( interpBinop '/ ( interp item 1 item 3 :exprc :env ) ( interp item 2 item 3 :exprc :env ) ) )]
+        [[['idc '<=]] 
+          output (eval '<= item 3 :exprc :env)]
         [ELSE output 'weird_appc]
-    [else output 'unimplemented]
+        [else output 'unimplemented]
 ]]
+    [ ['ifc] 
+      cond[
+        [[equal? true (interp item 2 :exprc :env)]
+        output (interp first item 3 :exprc :env)]
+        [[equal? false (interp item 2 :exprc :env)]
+        output (interp last item 3 :exprc :env)] 
+        [else output 'ZODE:_ifc_error]
+      ]]
     [ else output 'unimplemented ] ]
 end
   to serialize :value
@@ -119,16 +142,18 @@ end
   to main
   print "
   print "=============================
-  ;print (eval "+ (list 4 6) :env)
-  ;print (eval "+ (list 5 "errror) :env)
-  ;print (eval "- (list 7 9) :env)
-  ;print (eval "- (list 7 "error) :env)
-  ;print (eval "* (list 5 6) :env)
-  ;print (eval "* (list 6 "error) :env)
-  ;print (eval "/ (list 20 5) :env)
-  ;print (eval "/ (list 20 "error) :env)
-  ;print (eval "h (list 20 20) :env)
+  print (eval "+ (list (list 'numc 4) (list 'numc 6)) :env)
+  print (eval "+ (list (list 'numc 5) (list 'numc "errror)) :env)
+  print (eval "- (list (list 'numc 4) (list 'numc 6)) :env)
+  print (eval "- (list (list 'numc 5) (list 'numc "errror)) :env)
+  print (eval "* (list (list 'numc 4) (list 'numc 6)) :env)
+  print (eval "* (list (list 'numc 5) (list 'numc "errror)) :env)
+  print (eval "/ (list (list 'numc 24) (list 'numc 6)) :env)
+  print (eval "/ (list (list 'numc 5) (list 'numc "errror)) :env)
+  print (eval "h (list (list 'numc 4) (list 'numc 6)) :env)
+  ;print (eval "equal? (list (list 'numc 4) (list 'numc 6)) :env)
     make 'env ( list ( list 'true true ) ( list 'false false ))
+  
   ;test expressions
   make 'expr_num_1 ['numc 4]
   make 'expr_add_1 ['appc ['idc '+] [['numc 5] ['numc 7]]]
@@ -136,8 +161,10 @@ end
   make 'expr_mul_1 ['appc ['idc '*] [['numc 4] ['numc 4]]]
   make 'expr_div_1 ['appc ['idc '/] [['numc 8] ['numc 2]]]
   make 'expr_div_2 ['appc ['idc '/] [['numc 8] ['numc 0]]]
+  make 'expr_if_1 ['ifc ['appc ['idc '<=] [['numc 5] ['numc 7]]] [['numc 5] ['numc 6]]]
   ;switch out the exprc here
-  serialize (interp :expr_div_2 :env)
-  print ( eval "<= ( list ( list 'numc 8) ( list 'numc 9)) :env)
+  serialize (interp :expr_if_1 :env)
+  ;serialize (interp :expr_if_1 :env)
+  ;print ( eval "<= ( list ( list 'numc 8) ( list 'numc 9)) :env)
 end
   main
