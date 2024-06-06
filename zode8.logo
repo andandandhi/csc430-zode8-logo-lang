@@ -1,91 +1,127 @@
-;Tarj's Code
+
+;primops hasnt been properly develoepd yet - tarj
 ; Define structures and their fields
-to tstruct :name :fields
-  make :name :fields
+to numC :n
+  output (list "numC :n)
 end
 
-; Define ExprC and its variants
-to define-exprc
-  tstruct "numC [n]
-  tstruct "binopC [operation l r]
-  tstruct "idC [s]
-  tstruct "strC [str]
-  tstruct "appC [first args]
-  tstruct "squareC [a]
-  tstruct "ifC [test then else]
-  tstruct "lamC [args body]
+to IdC :s
+  output (list "IdC :s)
 end
 
-; Define Value and its variants
-to define-value
-  tstruct "numV [n]
-  tstruct "strV [str]
-  tstruct "boolV [bool]
-  tstruct "closV [args body env]
-  tstruct "primOpV [op]
+to strC :str
+  output (list "strC :str)
 end
 
-; Define environment and bindings
-make "mt-env []
-make "extend-env "cons
-
-to add-bindings
-  make "addbind (list '+ (list "primOpV '+))
-  make "subbind (list '- (list "primOpV '-))
-  make "multbind (list '* (list "primOpV '*))
-  make "divbind (list '/ (list "primOpV '/))
-  make "leqbind (list '<= (list "primOpV '<=))
-  make "eqbind (list 'equal? (list "primOpV 'equal?))
-  make "seqbind (list 'seq (list "primOpV 'seq))
-  make "plusbind (list '++ (list "primOpV '++))
-  make "readNumbind (list 'read-num (list "primOpV 'read-num))
-  make "readStrbind (list 'read-str (list "primOpV 'read-str))
-  make "printlnbind (list 'println (list "primOpV 'println))
-
-  make "tbind (list 'true (list "boolV true))
-  make "fbind (list 'false (list "boolV false))
-
-  make "tl-env (list "tbind "fbind "addbind "subbind "multbind "divbind "leqbind "eqbind "seqbind "plusbind "readNumbind "readStrbind "printlnbind)
+to AppC :first :args
+  output (list "AppC :first :args)
 end
 
-; Define basic operations
-to eval :op :args :env
-  if equal? (count :args) 1 [
-    ifelse :op = 'seq [output :args] [output (list "boolV true)]
+to ifC :test :then :else
+  output (list "ifC :test :then :else)
+end
+
+to lamC :args :body
+  output (list "lamC :args :body)
+end
+
+to numV :n
+  output (list "numV :n)
+end
+
+to strV :str
+  output (list "strV :str)
+end
+
+to boolV :bool
+  output (list "boolV :bool)
+end
+
+to closV :args :body :env
+  output (list "closV :args :body :env)
+end
+
+to primopV :op
+  output (list "primopV :op)
+end
+
+; Define the evaluation function for binary operations
+to eval :op :args
+  make "first (first :args)
+  make "second (first butfirst :args)
+  cond [
+    [:op = "+ if (and (number? :first) (number? :second)) [output :first + :second] [output "error+"]]
+    [:op = "- if (and (number? :first) (number? :second)) [output :first - :second] [output "error-"]]
+    [:op = "* if (and (number? :first) (number? :second)) [output :first * :second] [output "error*"]]
+    [:op = "/ if (and (number? :first) (number? :second)) [output :first / :second] [output "error/"]]
+    [else [output "error"]]
   ]
-  if equal? (count :args) 0 [
-    ifelse :op = 'seq [output :args] [output (list "boolV true)]
+end
+
+to interpBinop :binop :val1 :val2
+  case :binop [
+    ['+ if (and ((item 1 :val1) = "numV) ((item 1 :val2) = "numV)) [output (item 2 :val1) + (item 2 :val2)]]
+    ['- if (and ((item 1 :val1) = "numV) ((item 1 :val2) = "numV)) [output (item 2 :val1) - (item 2 :val2)]]
+    ['* if (and ((item 1 :val1) = "numV) ((item 1 :val2) = "numV)) [output (item 2 :val1) * (item 2 :val2)]]
+    ['/ if (and ((item 1 :val1) = "numV) ((item 1 :val2) = "numV)) [ifelse (notequal? (item 2 :val2) 0) [output (item 2 :val1) / (item 2 :val2)] [output "ZODE:divide_by_zero_error"]]]
+    [else [output "unimplemented_binop"]]
   ]
-  output (list "numV 0) ; Default return value for unsupported operations
 end
 
-; Define interpreter function
-to interp :a :env
-  if listp :a [
-    if equal? (first :a) "numC [output (list "numV (first (butfirst :a)))]
-    if equal? (first :a) "strC [output (list "strV (first (butfirst :a)))]
-    if equal? (first :a) "idC [output lookup (first (butfirst :a)) :env]
+to interp :exprc :env
+  case item 1 :exprc [
+    ["numC [output (list "numV item 2 :exprc)]]
+    ["appC case (item 2 :exprc) [
+      [["idC +] output (list "numV (interpBinop '+ (interp item 1 item 3 :exprc :env) (interp item 2 item 3 :exprc :env)))]
+      [["idC -] output (list "numV (interpBinop '- (interp item 1 item 3 :exprc :env) (interp item 2 item 3 :exprc :env)))]
+      [["idC *] output (list "numV (interpBinop '* (interp item 1 item 3 :exprc :env) (interp item 2 item 3 :exprc :env)))]
+      [["idC /] output (list "numV (interpBinop '/ (interp item 1 item 3 :exprc :env) (interp item 2 item 3 :exprc :env)))]
+      [else [output "weird_appC"]]
+    ]]
+    [else [output "unimplemented"]]
   ]
-  output (list "numV 0) ; Default return value for unsupported expressions
 end
 
-; Define lookup function
-to lookup :for :env
-  if emptyp :env [show [Error: name not found] stop]
-  if equal? (first :env) :for [output (second :env)]
-  output lookup :for (butfirst :env)
+to serialize :value
+  case item 1 :value [
+    ["numV [show word word '" (item 2 :value) '"]]
+    ["boolV [show word word '" (item 2 :value) '"]]
+    ["primopV [show '"#<primop>"]]
+    ["closV [show '"#<procedure>"]]
+    [else [show '"other_value?"]]
+  ]
 end
 
-; Define main program
+to lookup :search :env
+  if empty? :env [output "error_lookup"]
+  if equal? (item 1 (first :env)) :search [output (item 2 (first :env))]
+  output lookup :search (butfirst :env)
+end
+
 to main
-  define-exprc
-  define-value
-  add-bindings
+  print "============================="
+  print (eval "+ (list 4 6))
+  print (eval "+ (list 5 "error))
+  print (eval "- (list 7 9))
+  print (eval "- (list 7 "error))
+  print (eval "* (list 5 6))
+  print (eval "* (list 6 "error))
+  print (eval "/ (list 20 5))
+  print (eval "/ (list 20 "error))
+  print (eval "h (list 20 20))
 
-  ; Example usage
-  show eval '+ [5 7] "tl-env
-  show interp (list "numC 15) "tl-env
-  show interp (list "strC "hello") "tl-env
+  make "env (list (list 'true true) (list 'false false))
+  
+  ; Test expressions
+  make "expr_num_1 (numC 4)
+  make "expr_add_1 (AppC (IdC '+) (list (numC 5) (numC 7)))
+  make "expr_sub_1 (AppC (IdC '-) (list (numC 9) (numC 4)))
+  make "expr_mul_1 (AppC (IdC '*) (list (numC 4) (numC 4)))
+  make "expr_div_1 (AppC (IdC '/) (list (numC 8) (numC 2)))
+  make "expr_div_2 (AppC (IdC '/) (list (numC 8) (numC 0)))
+  
+  ; Switch out the exprc here
+  serialize (interp :expr_div_2 :env)
 end
 
 main
